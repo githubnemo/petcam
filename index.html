@@ -1,0 +1,77 @@
+<html>
+        <body>
+                <img src="http://{HOSTNAME}:{STREAM_VIDEO_PORT}/stream" style="width:640px;" />
+                <br/>
+
+                <span id="play_btn">&#x23F5;</span>
+
+                <script>
+                        const ctx = new AudioContext({{ latencyHint: 'interactive' }});
+                        const play_btn = document.getElementById("play_btn");
+                        let playTime = ctx.currentTime;
+                        let is_fetch_started = false;
+                        let is_playing = false;
+
+                        async function start() {{
+                                const res = await fetch('http://{HOSTNAME}:{STREAM_AUDIO_PORT}/stream');
+                                const reader = res.body.getReader();
+
+                                is_fetch_started = true;
+
+                                let buffer = new Uint8Array();
+
+                                while (true) {{
+                                        const {{ value, done }} = await reader.read();
+                                        if (done) break;
+
+                                        if (!is_playing) continue;
+
+                                        // append chunk
+                                        const tmp = new Uint8Array(buffer.length + value.length);
+                                        tmp.set(buffer);
+                                        tmp.set(value, buffer.length);
+                                        buffer = tmp;
+
+                                        // try decoding when we have enough data
+                                        if (buffer.length > 4 * 1024) {{ // 4 KB chunk
+                                                try {{
+                                                        const audioBuf = await ctx.decodeAudioData(buffer.buffer);
+
+                                                        const src = ctx.createBufferSource();
+                                                        src.buffer = audioBuf;
+                                                        src.connect(ctx.destination);
+
+                                                        // keep a small lead (~300ms)
+                                                        if (playTime < ctx.currentTime + 0.3) {{
+                                                                playTime = ctx.currentTime + 0.3;
+                                                        }}
+
+                                                        src.start(playTime);
+                                                        playTime += audioBuf.duration;
+
+                                                        buffer = new Uint8Array(); // reset
+                                                }} catch (e) {{
+                                                        // decoding may fail if chunk incomplete → keep accumulating
+                                                }}
+                                        }}
+                                }}
+                        }}
+
+                        play_btn.onclick = function() {{
+                                if (is_playing) {{
+                                        is_playing = false;
+                                        play_btn.setHTML("&#x23F5;");
+                                }} else {{
+                                        is_playing = true;
+                                        play_btn.setHTML("&#x23F8;");
+
+                                        if (!is_fetch_started) {{
+                                                start();
+                                        }}
+                                }}
+                        }};
+
+                </script>        
+        </body>
+</html>
+
