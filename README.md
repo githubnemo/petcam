@@ -50,6 +50,16 @@ Internal packages:
 petcam expects the audioserver executable to be in the same folder as `app.py`.
 You will need a working go setup but there are no external dependencies.
 
+If you want to auto-start the service, you can install it as a systemd
+user service. Make sure that the path to `start.sh` is correct in the .systemd
+file, then:
+
+    mkdir -p ~/.config/systemd/user/
+    ln -s $PWD/petcam.service ~/.config/systemd/user/petcam.service
+    systemctl --user enable petcam.service
+    systemctl --user start petcam.service
+
+
 # Configuration
 
 If you use a different camera than the Logitech C930e or the

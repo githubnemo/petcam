@@ -1,0 +1,11 @@
+[Unit]
+Description=petcam service
+
+[Service]
+Type=simple
+ExecStart=/home/pi/Code/petcam/start.sh
+Restart=on-failure
+StandardOutput=file:%h/log_file
+
+[Install]
+WantedBy=default.target

@@ -69,7 +69,7 @@ def audio():
 @app.route("/")
 def index():
     hostname = urlparse(request.base_url).hostname
-    with open("index.html") as f:
+    with open(os.path.join(SCRIPT_DIR, "index.html")) as f:
         return f.read().format(HOSTNAME=hostname, STREAM_VIDEO_PORT=STREAM_VIDEO_PORT, STREAM_AUDIO_PORT=STREAM_AUDIO_PORT)
 
 
